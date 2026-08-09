@@ -131,16 +131,7 @@ cp /system/lib64/libc.so /sdcard/Download/app-native-assets/libc.so
 > [!WARNING]
 > NEVER pull from `/system/lib/`. 32-bit layers will fail on modern 64-bit ARM architectures (`aarch64`).
 
-### Step 4: Preparing the Alpine Guest rootfs Pathing
-Download the official [Alpine Linux AArch64 Mini Rootfs](https://alpinelinux.org/downloads/). Before packaging, handle symlinks in the extracted rootfs directory tree:
-
-```bash
-# Inside your extracted Alpine rootfs directory
-mkdir -p ./lib64
-ln -s ../lib/ld-musl-aarch64.so.1 ./lib64/libc.so
-```
-
-### Step 5: Environment Customization (Termux Workflow)
+### Step 4: Environment Customization (Termux Workflow)
 This sequence handles repository patches and package initialization to compile the final rootfs payload.
 
 ```bash
@@ -174,7 +165,7 @@ tar --exclude='rootfs/dev/*' --exclude='rootfs/proc/*' --exclude='rootfs/sys/*' 
 cp alpine_r.tar.gz /storage/emulated/0/Download/
 ```
 
-### Phase 6: Embedded App Asset Layout Structure
+### Phase 5: Embedded App Asset Layout Structure
 ```text
 app/src/main/assets/
   ├── alpine_r.tar.gz   <-- Pre-baked Alpine Linux Environment (Contains R/Rscript)
