@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.DroidRStudio" parent="Theme.MaterialComponents.Light" />
+</resources>
