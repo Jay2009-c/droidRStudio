@@ -46,13 +46,12 @@ A guided workflow system for common data science tasks using industry-standard R
 
 ## 🛠️ Technical Architecture
 
-### Core Architecture
-droidR-Studio is a standalone Android IDE that executes a fully functional ARM64 R-Language statistical compute environment locally on device without requiring root access.
-The application bypasses Android's custom Bionic libc runtime limitations by embedding an ultra-lightweight Alpine Linux filesystem (musl libc) directly inside the APK assets. At runtime, the application leverages an isolated PRoot User-Space Sandbox execution engine to intercept, modify, and translate Linux kernel system calls, tricking the native compiled R binaries into running natively inside the Android user space container.
+### Project Overview
+This project bundles an isolated Alpine Linux root filesystem (rootfs) containing an R compiler toolchain inside a standalone, non-rooted Android application. It achieves this by embedding a Termux-compiled PRoot binary and its companion plugins directly as native app assets.
 
 ### Core Architectural Rules
-*   **Host vs. Guest Distinction**: The PRoot binary runs on the **Android Host layer** and MUST use Android's Bionic C library (`libc.so`) to run. Conversely, the R compiler runs inside the **Guest layer (Alpine)** and MUST use Alpine's Musl C library (`ld-musl-aarch64.so.1`). Mixing these up causes immediate Segmentation Faults.
-*   **The lib64 Path Fix**: Compiler tools inside Alpine often hardcode lookups for `/lib64/libc.so`. droidR Studio resolves this by creating a symbolic link directly within the Guest rootfs (`/lib64/libc.so -> /lib/ld-musl-aarch64.so.1`), ensuring that all guest processes find the Musl loader at the expected path without requiring runtime binds.
+1.  **Host vs. Guest Distinction**: The PRoot binary runs on the **Android Host layer** and MUST use Android's Bionic C library (`libc.so`) to run. Conversely, the R compiler runs inside the **Guest layer (Alpine)** and MUST use Alpine's Musl C library (`ld-musl-aarch64.so.1`). Mixing these up causes immediate Segmentation Faults.
+2.  **The lib64 Path Fix**: Compiler tools inside Alpine often hardcode lookups for `/lib64/libc.so` or Termux-specific paths. droidR Studio resolves this either by creating a symbolic link directly within the Guest rootfs (`/lib64/libc.so -> /lib/ld-musl-aarch64.so.1`) or by using PRoot's bind (`-b`) argument at runtime to route those paths transparently to Alpine's internal Musl library file.
 
 ### The "Bridge" Mechanism (`AlpineRBridge`)
 The core of the app is the `AlpineRBridge`, which orchestrates the PRoot environment:
@@ -75,8 +74,10 @@ The environment comes ready with a powerful suite of packages:
 To enable PRoot virtualization, the application requires a specific set of native binaries staged in the `jniLibs` directory.
 
 ### Required Directory Structure
+Visual file tree showing the exact native assets configuration under the 64-bit ARM architecture folder:
+
 ```text
-app/src/main/jniLibs/arm64-v8a/
+src/main/jniLibs/arm64-v8a/
 ├── libandroid-shmem.so   (System V shared memory emulation plugin)
 ├── libc.so               (64-bit Android Bionic system C library)
 ├── libproot.so           (The main Termux PRoot executable binary, renamed to .so for Gradle packaging)
@@ -89,39 +90,46 @@ app/src/main/jniLibs/arm64-v8a/
 
 ---
 
-## 🏗️ Deep Dive: Manual Reproduction & Customization
+## 🏗️ Deep Dive: Step-by-Step Extraction & Storage Guide
 
-Follow these steps to manually extract host binaries and customize the Alpine Guest environment.
+Follow these steps to manually extract host binaries and customize the Alpine Guest environment using a Termux build environment.
 
-### Step 1: Extracting Host Binaries from Termux
-Install the necessary tools in Termux and copy them to a staging directory:
+### Step 1: Setup a Staging Area in the Shared Download Directory
+Before copying, ensure Termux has storage permissions and create a dedicated folder inside the public Android Download directory. This makes the files easily accessible to Android Studio or file managers:
+
+```bash
+# Request storage permission
+termux-setup-storage
+# Create staging directory in public storage
+mkdir -p /sdcard/Download/app-native-assets
+```
+
+### Step 2: Extracting and Exporting Host Binaries from Termux
+Install the necessary tools in Termux and copy and rename the files directly from their system locations to the public shared Download staging directory:
 
 ```bash
 # Update and install dependencies
 pkg update && pkg upgrade -y
 pkg install proot libandroid-shmem talloc
 
-# Create a staging directory
-mkdir -p ./staging_jni
-
 # Copy and rename binaries for Android packaging
-cp /data/data/com.termux/files/usr/bin/proot ./staging_jni/libproot.so
-cp /data/data/com.termux/files/usr/libexec/proot/libproot-loader.so ./staging_jni/libproot-loader.so
-cp /data/data/com.termux/files/usr/lib/libandroid-shmem.so ./staging_jni/libandroid-shmem.so
-cp /data/data/com.termux/files/usr/lib/libtalloc.so.2 ./staging_jni/libtalloc.so.2
+cp /data/data/com.termux/files/usr/bin/proot /sdcard/Download/app-native-assets/libproot.so
+cp /data/data/com.termux/files/usr/libexec/proot/libproot-loader.so /sdcard/Download/app-native-assets/libproot-loader.so
+cp /data/data/com.termux/files/usr/lib/libandroid-shmem.so /sdcard/Download/app-native-assets/libandroid-shmem.so
+cp /data/data/com.termux/files/usr/lib/libtalloc.so.2 /sdcard/Download/app-native-assets/libtalloc.so.2
 ```
 
-### Step 2: Extracting Host libc.so from Android
-You must pull the 64-bit Bionic library directly from a device or emulator:
+### Step 3: Extracting and Exporting Host libc.so from Android
+You must pull the 64-bit Bionic library directly from the device:
 
 ```bash
-cp /system/lib64/libc.so ./staging_jni/libc.so
+cp /system/lib64/libc.so /sdcard/Download/app-native-assets/libc.so
 ```
 > [!WARNING]
 > NEVER pull from `/system/lib/`. 32-bit layers will fail on modern 64-bit ARM architectures (`aarch64`).
 
-### Step 3: Preparing the Alpine Guest rootfs Pathing
-Download the official [Alpine Linux AArch64 Mini Rootfs](https://alpinelinux.org/downloads/). Before packaging, you must handle symlinks to ensure compiler tools can find the Musl library:
+### Step 4: Preparing the Alpine Guest rootfs Pathing
+Download the official [Alpine Linux AArch64 Mini Rootfs](https://alpinelinux.org/downloads/). Before packaging, handle symlinks in the extracted rootfs directory tree:
 
 ```bash
 # Inside your extracted Alpine rootfs directory
@@ -129,8 +137,8 @@ mkdir -p ./lib64
 ln -s ../lib/ld-musl-aarch64.so.1 ./lib64/libc.so
 ```
 
-### Phase 4: Environment Customization (Termux Workflow)
-This sequence handles repository patches, package initialization, and mirror mapping to compile the generic rootfs payload.
+### Step 5: Environment Customization (Termux Workflow)
+This sequence handles repository patches and package initialization to compile the final rootfs payload.
 
 ```bash
 # 1. Purge legacy build caches and pull target container frameworks
@@ -163,7 +171,7 @@ tar --exclude='rootfs/dev/*' --exclude='rootfs/proc/*' --exclude='rootfs/sys/*' 
 cp alpine_r.tar.gz /storage/emulated/0/Download/
 ```
 
-### Phase 5: Embedded App Asset Layout Structure
+### Phase 6: Embedded App Asset Layout Structure
 ```text
 app/src/main/assets/
   ├── alpine_r.tar.gz   <-- Pre-baked Alpine Linux Environment (Contains R/Rscript)
@@ -176,11 +184,23 @@ app/src/main/assets/
 The application execution layer must run these assets using isolated paths and specific environment variables.
 
 ### Execution Strategy
-1.  **Environment Setup**: Enforce `LD_LIBRARY_PATH` to include both the app's native library directory and a custom "native-libs" directory where versioned dependencies (like `libtalloc.so.2`) are extracted.
+1.  **Library Path**: Enforce setting `LD_LIBRARY_PATH` point to the app context's native library dir (`/data/data/your.package.name/lib/`) so the host system can execute `libproot.so`.
 2.  **Path Configuration**: Set `PROOT_LOADER` to point to `libproot-loader.so` and `PROOT_TMP_DIR` to a writable cache directory.
-3.  **Core Bindings**: Use the `-b` (bind) flag to mount essential host virtual filesystems (`/dev`, `/proc`, `/sys`) into the Guest environment.
+3.  **Isolated Execution & Mapping**: Use the `--isolated` flag and the transparent mapping fix where necessary.
 
 **Example PRoot Command:**
+```bash
+./libproot.so \
+  --isolated \
+  -r /path/to/alpine-rootfs \
+  -b /path/to/alpine-rootfs/lib/ld-musl-aarch64.so.1:/data/data/com.termux/files/usr/lib64/libc.so \
+  -0 \
+  /usr/bin/R
+```
+
+**Live App Execution Context:**
+The current `AlpineRBridge.kt` implementation leverages host-side environment variables and standard binds for `/dev`, `/proc`, and `/sys` to manage the bridge:
+
 ```bash
 LD_LIBRARY_PATH=/data/data/pkg/files/native-libs:/data/data/pkg/lib \
 PROOT_TMP_DIR=/data/data/pkg/cache/proot-tmp \
@@ -207,6 +227,8 @@ PROOT_LOADER=/data/data/pkg/lib/libproot-loader.so \
 2.  **Open in Android Studio:** Open the project as a standard Android Gradle project.
 3.  **Build & Run:** Deploy to an `arm64-v8a` device (required for the PRoot loader).
 4.  **Initial Extraction:** Upon first launch, the app will extract the Alpine Linux rootfs from the assets. This may take a minute.
+    > [!TIP]
+    > To force a re-extraction during development, increment the `currentVersion` string in `MainActivity.kt`.
 
 ---
 
