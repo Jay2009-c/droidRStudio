@@ -1,4 +1,4 @@
-# droidR Studio: Native R Development Environment for Android
+# droidR-Studio: Native R Development Environment for Android
 
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com/)
 [![Language](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org/)
@@ -93,7 +93,7 @@ src/main/jniLibs/arm64-v8a/
 
 ---
 
-## 🏗️ Deep Dive: Step-by-Step Extraction & Storage Guide
+## Deep Dive: Step-by-Step Extraction & Storage Guide
 
 Follow these steps to manually extract host binaries and customize the Alpine Guest environment using a Termux build environment.
 
@@ -269,7 +269,7 @@ Contributions are welcome! Whether it's adding new R tool templates, improving t
 Created by **Jay** | Empowering mobile data science with droidR Studio.
 
 > [!NOTE]
-> This project was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
+> The app's codebase was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
 >
 > [!CAUTION]
 > Many features are experimental, not fully tested, and may not work as intended. Stability depends on the integrity of the rootfs and the specific R packages installed in the guest environment.
