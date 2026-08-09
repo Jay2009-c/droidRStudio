@@ -269,7 +269,7 @@ Contributions are welcome! Whether it's adding new R tool templates, improving t
 Created by **Jay** | Empowering mobile data science with droidR Studio.
 
 > [!NOTE]
-> This project was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
+> The app's codebase was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
 >
 > [!CAUTION]
 > Many features are experimental, not fully tested, and may not work as intended. Stability depends on the integrity of the rootfs and the specific R packages installed in the guest environment.
