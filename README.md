@@ -256,7 +256,7 @@ Fetch live data from the web directly into your R environment using the built-in
 ---
 
 ## 🤝 Contributing
-Contributions are welcome! Whether it's adding new R tool templates, improving the editor, or optimizing the PRoot bridge, feel free to open an issue or submit a pull request.
+Contributions are welcome! Whether it's adding new R tool templates, improving the editor, optimizing the PRoot bridge, or expanding the platform support feel free to open an issue or submit a pull request.
 
 ---
 
