@@ -94,14 +94,14 @@ apk update && apk add R R-dev tar gzip
 
 # 5. Core Environment Verification Test
 R --version
-
-# 6. Execute root extraction loop (Excluding virtual file systems to prevent host leakages)
-tar --exclude=proc --exclude=sys --exclude=dev --exclude=storage --exclude=sdcard -czf /alpine_r.tar.gz -C / .
 exit
 
-# 7. Relocate compiled artifacts to Android shared workspace storage channels
+# 6. Execute root extraction loop (Excluding virtual file systems to prevent host leakages)
 termux-setup-storage
-cd $PREFIX/var/lib/proot-distro/containers/alpine/rootfs/
+cd $PREFIX/var/lib/proot-distro/containers/alpine/
+tar --exclude='rootfs/dev/*' --exclude='rootfs/proc/*' --exclude='rootfs/sys/*' -czf alpine.tar.gz rootfs/
+
+# 7. Relocate compiled artifacts to Android shared workspace storage channels
 cp alpine_r.tar.gz /storage/emulated/0/Download/
 ```
 
