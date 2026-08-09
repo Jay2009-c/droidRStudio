@@ -93,7 +93,7 @@ src/main/jniLibs/arm64-v8a/
 
 ---
 
-## 🏗️ Deep Dive: Step-by-Step Extraction & Storage Guide
+## Deep Dive: Step-by-Step Extraction & Storage Guide
 
 Follow these steps to manually extract host binaries and customize the Alpine Guest environment using a Termux build environment.
 
