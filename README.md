@@ -153,9 +153,12 @@ Contributions are welcome! Whether it's adding new R tool templates, improving t
 ---
 
 ## 📄 License
-*   The Android source code is licensed under [MIT/Apache 2.0 - Specify your choice].
+*   The Android source code is licensed under GPL 3.0.
 *   The Alpine Linux environment and R packages are subject to their respective licenses.
 
 ---
 
 Created by **Jay** | Empowering mobile data science with droidR Studio.
+
+> [!NOTE]
+> This project was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
