@@ -7,6 +7,9 @@
 
 **droidR Studio** is a professional-grade, mobile-first R development environment that brings the full power of the R statistical computing language to Android devices. Unlike simple consoles or web-wrappers, droidR Studio runs a native Alpine Linux environment using PRoot, enabling high-performance, offline data science directly on your phone or tablet.
 
+> [!IMPORTANT]
+> All features are not fully tested and may not work as intended. Functionality is highly dependent on the specific packages and configuration within the embedded Alpine filesystem.
+
 ---
 
 ## 🚀 Key Features
@@ -267,3 +270,6 @@ Created by **Jay** | Empowering mobile data science with droidR Studio.
 
 > [!NOTE]
 > This project was partially **vibe coded** — built with a mix of technical rigor and creative intuition.
+>
+> [!CAUTION]
+> Many features are experimental, not fully tested, and may not work as intended. Stability depends on the integrity of the rootfs and the specific R packages installed in the guest environment.
