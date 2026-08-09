@@ -99,7 +99,7 @@ exit
 # 6. Execute root extraction loop (Excluding virtual file systems to prevent host leakages)
 termux-setup-storage
 cd $PREFIX/var/lib/proot-distro/containers/alpine/
-
+tar --exclude=*rootfs/dev/** --excl ude="rootfs/proc/** --exclude="rootfs/sys/** -czf alpine.tar.gz rootfs/
 
 # 7. Relocate compiled artifacts to Android shared workspace storage channels
 cp alpine_r.tar.gz /storage/emulated/0/Download/
