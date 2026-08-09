@@ -1,4 +1,4 @@
-# droidR Studio: Native R Development Environment for Android
+# droidR-Studio: Native R Development Environment for Android
 
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com/)
 [![Language](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org/)
