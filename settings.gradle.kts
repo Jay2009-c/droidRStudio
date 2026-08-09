@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "droidR Studio"
+rootProject.name = "droidR-Studio"
 include(":app")
  
