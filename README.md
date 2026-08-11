@@ -246,6 +246,11 @@ Fetch live data from the web directly into your R environment using the built-in
 
 ---
 
+## 💾 Storage Footprint Notice:
+droidRStudio extracts a full, uncompromised Alpine Linux environment to enable native package execution. While the initial download is highly compressed, the app requires approximately 1 GB of local device storage after installation to support heavy libraries like dplyr and plotly offline.
+
+---
+
 ## 🤝 Contributing
 Contributions are welcome! Whether it's adding new R tool templates, improving the editor, optimizing the PRoot bridge, or expanding the platform support feel free to open an issue or submit a pull request.
 
