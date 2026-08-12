@@ -31,14 +31,26 @@ fun TerminalScreen(
     onViewPlot: (File) -> Unit = {}
 ) {
     val output by viewModel.output.collectAsState()
+    val terminalOutput by viewModel.terminalOutput.collectAsState()
+    
     val listState = rememberLazyListState()
+    val terminalListState = rememberLazyListState()
+    
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Output", "Plots")
+    val tabs = listOf("Output", "Terminal", "Plots")
+
+    var terminalInput by remember { mutableStateOf("") }
 
     // Auto-scroll to bottom when new output arrives
     LaunchedEffect(output.size) {
         if (output.isNotEmpty() && selectedTab == 0) {
             listState.animateScrollToItem(output.size - 1)
+        }
+    }
+
+    LaunchedEffect(terminalOutput.size) {
+        if (terminalOutput.isNotEmpty() && selectedTab == 1) {
+            terminalListState.animateScrollToItem(terminalOutput.size - 1)
         }
     }
 
@@ -71,8 +83,11 @@ fun TerminalScreen(
             }
 
             Row {
-                if (selectedTab == 0) {
-                    IconButton(onClick = { viewModel.clearOutput() }) {
+                if (selectedTab == 0 || selectedTab == 1) {
+                    IconButton(onClick = { 
+                        if (selectedTab == 0) viewModel.clearOutput() 
+                        else viewModel.clearTerminalOutput()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.DeleteSweep,
                             contentDescription = "Clear Output",
@@ -119,6 +134,80 @@ fun TerminalScreen(
                     }
                 }
                 1 -> {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = terminalListState,
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            items(terminalOutput) { line ->
+                                Text(
+                                    text = line,
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp,
+                                        color = if (line.startsWith("#")) Color.Yellow 
+                                                else if (line.contains("Error", ignoreCase = true)) Color.Red 
+                                                else Color.Cyan,
+                                        lineHeight = 18.sp
+                                    )
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().background(Color(0xFF1A1A1A))
+                        ) {
+                            Text(
+                                "# ",
+                                color = Color.Yellow,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                            TextField(
+                                value = terminalInput,
+                                onValueChange = { terminalInput = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    cursorColor = Color.White,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                textStyle = TextStyle(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 14.sp
+                                ),
+                                singleLine = true,
+                                placeholder = {
+                                    Text(
+                                        "apk add ..., ls, sh script.sh",
+                                        color = Color.DarkGray,
+                                        fontSize = 12.sp
+                                    )
+                                },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                                ),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                    onDone = {
+                                        if (terminalInput.isNotBlank()) {
+                                            viewModel.executeShellCommand(terminalInput)
+                                            terminalInput = ""
+                                        }
+                                    }
+                                )
+                            )
+                        }
+                    }
+                }
+                2 -> {
                     PlotScreen(
                         viewModel = viewModel,
                         onExport = onExportPlot,

@@ -28,6 +28,9 @@ class AlpineRBridge(private val context: Context) {
     private val _output = MutableStateFlow<List<String>>(emptyList())
     val output: StateFlow<List<String>> = _output.asStateFlow()
 
+    private val _shellOutput = MutableStateFlow<List<String>>(emptyList())
+    val shellOutput: StateFlow<List<String>> = _shellOutput.asStateFlow()
+
     private val mutex = Mutex()
 
     /**
@@ -83,18 +86,23 @@ class AlpineRBridge(private val context: Context) {
     }
 
     /**
-     * Executes the R script using proot.
+     * Core execution logic for running commands inside the PRoot environment.
      */
-    private suspend fun executeRScript(runnerFile: File, alpineRoot: File) = withContext(Dispatchers.IO) {
+    private suspend fun executeInProot(
+        commandArgs: List<String>,
+        outputFlow: MutableStateFlow<List<String>>
+    ) = withContext(Dispatchers.IO) {
+        val alpineRoot = File(context.filesDir, "alpine/$ROOTFS_DIRECTORY")
         val prootPath = File(context.applicationInfo.nativeLibraryDir, "libproot.so").canonicalPath
         val prootDependencyPath = installProotDependency().canonicalPath
         val nativeLibPath = context.applicationInfo.nativeLibraryDir
         val prootLoader = File(nativeLibPath, PROOT_LOADER_FILE)
+        
         check(prootLoader.isFile) {
             "Missing PRoot loader: ${prootLoader.absolutePath}. " +
-                "Copy Termux's \$PREFIX/libexec/proot/loader to " +
-                "app/src/main/jniLibs/arm64-v8a/$PROOT_LOADER_FILE, then rebuild and reinstall the app."
+                "Reinstall the app or check jniLibs."
         }
+        
         val prootTempDir = File(context.cacheDir, "proot-tmp")
         check(prootTempDir.mkdirs() || prootTempDir.isDirectory) {
             "Unable to create PRoot temporary directory: ${prootTempDir.absolutePath}"
@@ -102,42 +110,37 @@ class AlpineRBridge(private val context: Context) {
         
         val canonicalAlpineRoot = alpineRoot.canonicalPath
         
-        /*
-         * These are host-side variables.  libproot is linked by Android's
-         * linker, so it must search only the Android-compatible libtalloc
-         * directory.  Alpine's musl directories must not be added here: the
-         * guest loader resolves them after PRoot has switched to the rootfs.
-         */
         val hostEnv = mapOf(
             "LD_LIBRARY_PATH" to "$prootDependencyPath:$nativeLibPath",
             "PROOT_TMP_DIR" to prootTempDir.absolutePath,
             "PROOT_LOADER" to prootLoader.canonicalPath
         )
 
-        val processBuilder = ProcessBuilder(
+        val fullArgs = mutableListOf(
             prootPath,
             "-0", // Fake root
             "-r", canonicalAlpineRoot,
             "-b", "/dev",
             "-b", "/proc",
             "-b", "/sys",
-            "-w", "/root",
-            "/usr/bin/Rscript",
-            runnerFile.name
+            "-w", "/root"
         )
+        fullArgs.addAll(commandArgs)
 
+        val processBuilder = ProcessBuilder(fullArgs)
         applyEnvironment(processBuilder, hostEnv)
-
         processBuilder.redirectErrorStream(true)
+        
         val process = processBuilder.start()
 
         try {
-            withTimeout(60000) {
+            // Increased timeout for potentially long shell operations like apk add
+            withTimeout(300_000) { 
                 process.inputStream.bufferedReader().use { reader ->
                     var line: String? = reader.readLine()
                     while (line != null) {
                         val currentLine = line
-                        _output.update { it + currentLine }
+                        outputFlow.update { it + currentLine }
                         line = reader.readLine()
                     }
                 }
@@ -176,11 +179,32 @@ class AlpineRBridge(private val context: Context) {
                 writeRCode(rCode, runnerFile)
                 ensureRProfile(alpineRoot)
                 ensureNetworkConfig(alpineRoot)
-                executeRScript(runnerFile, alpineRoot)
+                
+                executeInProot(listOf("/usr/bin/Rscript", runnerFile.name), _output)
             } catch (e: Exception) {
                 _output.update { it + "Error: ${e.message}" }
             }
         }
+    }
+
+    /**
+     * Executes a shell command within the Alpine environment.
+     */
+    suspend fun runShellCommand(command: String) {
+        mutex.withLock {
+            try {
+                val alpineRoot = File(context.filesDir, "alpine/$ROOTFS_DIRECTORY")
+                ensureNetworkConfig(alpineRoot)
+                
+                executeInProot(listOf("/bin/sh", "-c", command), _shellOutput)
+            } catch (e: Exception) {
+                _shellOutput.update { it + "Error: ${e.message}" }
+            }
+        }
+    }
+
+    fun clearShellOutput() {
+        _shellOutput.value = emptyList()
     }
 
     private fun isAlive(process: Process): Boolean {

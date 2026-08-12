@@ -17,8 +17,11 @@ import java.io.File
 class TerminalViewModel(application: Application) : AndroidViewModel(application) {
     private val bridge = AlpineRBridge(application)
     
-    private val _output = MutableStateFlow<List<String>>(listOf("Welcome to droidR Studio Terminal"))
+    private val _output = MutableStateFlow<List<String>>(listOf("Welcome to droidR Studio Output"))
     val output: StateFlow<List<String>> = _output.asStateFlow()
+
+    private val _terminalOutput = MutableStateFlow<List<String>>(listOf("Alpine Linux Shell Ready", "# Type a command below"))
+    val terminalOutput: StateFlow<List<String>> = _terminalOutput.asStateFlow()
 
     private val _plots = MutableStateFlow<List<File>>(emptyList())
     val plots: StateFlow<List<File>> = _plots.asStateFlow()
@@ -28,12 +31,15 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             bridge.output.collectLatest { bridgeLines ->
                 if (bridgeLines.isNotEmpty()) {
-                    // When bridge execution starts, it clears its output.
-                    // We can choose to append or replace. 
-                    // Given AlpineRBridge.execute() clears its output, 
-                    // we should probably just append the header once and then follow bridge.
-                    // But to keep it simple and match AlpineRBridge's behavior:
                     _output.value = bridgeLines
+                }
+            }
+        }
+        // Pipe bridge shell output to our local terminal state
+        viewModelScope.launch {
+            bridge.shellOutput.collectLatest { bridgeLines ->
+                if (bridgeLines.isNotEmpty()) {
+                    _terminalOutput.value = bridgeLines
                 }
             }
         }
@@ -43,6 +49,15 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             bridge.execute(code)
             scanForPlots()
+        }
+    }
+
+    fun executeShellCommand(command: String) {
+        viewModelScope.launch {
+            // Echo the command first
+            _terminalOutput.update { it + "# $command" }
+            bridge.runShellCommand(command)
+            scanForPlots() // Shell commands might generate plots too
         }
     }
 
@@ -80,7 +95,11 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun clearOutput() {
-        // Note: bridge doesn't have a clear, but execute() clears it.
         _output.value = emptyList()
+    }
+
+    fun clearTerminalOutput() {
+        bridge.clearShellOutput()
+        _terminalOutput.value = emptyList()
     }
 }
