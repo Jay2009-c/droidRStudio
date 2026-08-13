@@ -38,7 +38,6 @@ class MainActivity : ComponentActivity() {
                 var showUpdateDialog by remember { mutableStateOf<AppUpdate?>(null) }
                 val updateManager = remember { UpdateManager(context) }
                 var currentDownloadId by remember { mutableLongStateOf(-1L) }
-                val scope = rememberCoroutineScope()
 
                 LaunchedEffect(Unit) {
                     try {
