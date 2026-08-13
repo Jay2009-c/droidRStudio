@@ -123,7 +123,7 @@ fun SetupScreen(state: ExtractionState) {
                 modifier = Modifier.padding(32.dp)
             ) {
                 Text(
-                    text = "Setting up Proot Environment",
+                    text = "Setting Up Environment",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
@@ -131,7 +131,7 @@ fun SetupScreen(state: ExtractionState) {
                 when (state) {
                     is ExtractionState.Extracting -> {
                         Text(
-                            text = "Unpacking Alpine Filesystem...",
+                            text = "Unpacking Alpine Filesystem... & Setting PRoot Environment",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
