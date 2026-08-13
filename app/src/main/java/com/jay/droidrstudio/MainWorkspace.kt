@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -161,7 +162,7 @@ fun MainWorkspace(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("droidR Workspace", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("droidR-Studio", style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     IconButton(onClick = { checkUpdateManual() }) {
                         Icon(Icons.Filled.BrowserUpdated, contentDescription = "Updates", tint = MaterialTheme.colorScheme.primary)
@@ -196,7 +197,7 @@ fun MainWorkspace(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+        Box(modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).fillMaxSize()) {
             when (selectedTab) {
                 WorkspaceTab.EDITOR -> EditorTab(editorState) {
                     engine.runRScriptDirectly(editorState.text.toString())
