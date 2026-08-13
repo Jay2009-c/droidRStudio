@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.OutputStream
 import java.nio.charset.Charset
+import kotlin.time.Duration.Companion.milliseconds
 
 class PRootEngine(private val context: Context) {
     companion object {
@@ -126,7 +127,7 @@ class PRootEngine(private val context: Context) {
                     startPersistentTerminal()
                 }
                 // Small delay to allow shell to process and write files if any
-                delay(500)
+                delay(500.milliseconds)
                 scanForPlots()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send command", e)
