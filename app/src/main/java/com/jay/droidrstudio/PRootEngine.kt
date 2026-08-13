@@ -119,6 +119,20 @@ class PRootEngine(private val context: Context) {
     fun sendTerminalCommand(command: String) {
         scope.launch {
             try {
+                // Add command to the output flow with prompt and spacing logic
+                _terminalOutput.update { current ->
+                    val nextList = mutableListOf<String>()
+                    nextList.addAll(current)
+                    
+                    // Add a blank line if the last line wasn't blank to separate from previous command's output
+                    if (nextList.isNotEmpty() && nextList.last().isNotBlank()) {
+                        nextList.add("")
+                    }
+                    
+                    nextList.add("/root# $command")
+                    nextList
+                }
+
                 terminalOutputStream?.let { 
                     it.write((command + "\n").toByteArray(Charset.defaultCharset()))
                     it.flush()

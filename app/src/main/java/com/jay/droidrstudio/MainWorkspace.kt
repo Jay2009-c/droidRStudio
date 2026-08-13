@@ -73,6 +73,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -595,8 +596,19 @@ fun TerminalTab(engine: PRootEngine) {
 
 @Composable
 fun TerminalLine(line: String) {
+    val text = if (line.startsWith("/root# ")) {
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = Color(0xFF00FF00), fontWeight = FontWeight.Bold)) {
+                append("/root# ")
+            }
+            append(line.substringAfter("/root# "))
+        }
+    } else {
+        parseAnsi(line)
+    }
+
     Text(
-        text = parseAnsi(line),
+        text = text,
         style = TextStyle(
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
