@@ -406,6 +406,7 @@ fun OutputTab(engine: PRootEngine) {
 @Composable
 fun TerminalTab(engine: PRootEngine) {
     val output by engine.terminalOutput.collectAsStateWithLifecycle()
+    val currentDir by engine.currentDirectory.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     var input by remember { mutableStateOf("") }
     
@@ -524,7 +525,7 @@ fun TerminalTab(engine: PRootEngine) {
                 modifier = Modifier.padding(bottom = 2.dp)
             ) {
                 Text(
-                    "root# ",
+                    "$currentDir#",
                     color = Color(0xFF00FF00),
                     fontFamily = FontFamily.Monospace,
                     fontSize = 14.sp,
@@ -596,12 +597,14 @@ fun TerminalTab(engine: PRootEngine) {
 
 @Composable
 fun TerminalLine(line: String) {
-    val text = if (line.startsWith("/root# ")) {
+    val text = if (line.contains("# ") && (line.startsWith("~") || line.startsWith("/"))) {
+        val prompt = line.substringBefore("# ") + "# "
+        val cmd = line.substringAfter("# ")
         buildAnnotatedString {
             withStyle(SpanStyle(color = Color(0xFF00FF00), fontWeight = FontWeight.Bold)) {
-                append("/root# ")
+                append(prompt)
             }
-            append(line.substringAfter("/root# "))
+            append(cmd)
         }
     } else {
         parseAnsi(line)

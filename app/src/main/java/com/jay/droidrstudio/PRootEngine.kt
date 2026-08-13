@@ -31,6 +31,9 @@ class PRootEngine(private val context: Context) {
     private val _terminalOutput = MutableStateFlow<List<String>>(emptyList())
     val terminalOutput: StateFlow<List<String>> = _terminalOutput.asStateFlow()
 
+    private val _currentDirectory = MutableStateFlow("~")
+    val currentDirectory: StateFlow<String> = _currentDirectory.asStateFlow()
+
     private val _plots = MutableStateFlow<List<File>>(emptyList())
     val plots: StateFlow<List<File>> = _plots.asStateFlow()
 
@@ -97,7 +100,12 @@ class PRootEngine(private val context: Context) {
                         var line: String? = reader.readLine()
                         while (line != null) {
                             val currentLine = line
-                            _terminalOutput.update { it + currentLine }
+                            if (currentLine.startsWith("CWD:")) {
+                                val rawPath = currentLine.substringAfter("CWD:")
+                                _currentDirectory.value = formatPath(rawPath)
+                            } else {
+                                _terminalOutput.update { it + currentLine }
+                            }
                             line = reader.readLine()
                         }
                     }
@@ -119,6 +127,7 @@ class PRootEngine(private val context: Context) {
     fun sendTerminalCommand(command: String) {
         scope.launch {
             try {
+                val prompt = _currentDirectory.value + "#"
                 // Add command to the output flow with prompt and spacing logic
                 _terminalOutput.update { current ->
                     val nextList = mutableListOf<String>()
@@ -129,12 +138,14 @@ class PRootEngine(private val context: Context) {
                         nextList.add("")
                     }
                     
-                    nextList.add("/root# $command")
+                    nextList.add("$prompt $command")
                     nextList
                 }
 
                 terminalOutputStream?.let { 
-                    it.write((command + "\n").toByteArray(Charset.defaultCharset()))
+                    // Append pwd check after every command to keep UI in sync
+                    val fullCommand = "$command; echo \"CWD:$(pwd)\"\n"
+                    it.write(fullCommand.toByteArray(Charset.defaultCharset()))
                     it.flush()
                 } ?: run {
                     _terminalOutput.update { it + "Error: Shell not running. Restarting..." }
@@ -146,6 +157,14 @@ class PRootEngine(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send command", e)
             }
+        }
+    }
+
+    private fun formatPath(path: String): String {
+        return when {
+            path == "/root" -> "~"
+            path.startsWith("/root/") -> "~" + path.substring(5)
+            else -> path
         }
     }
 
