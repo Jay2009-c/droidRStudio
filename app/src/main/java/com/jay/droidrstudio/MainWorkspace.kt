@@ -333,7 +333,7 @@ fun EditorTab(state: TextFieldState, onRun: () -> Unit) {
         ) {
             Icon(Icons.Default.Bolt, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("⚡ Run Code in Rscript")
+            Text("Run Code in Rscript!")
         }
     }
 }
