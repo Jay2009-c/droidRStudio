@@ -5,7 +5,7 @@
 [![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-orange.svg)](https://developer.android.com/jetpack/compose)
 [![Backend](https://img.shields.io/badge/Backend-Alpine%20Linux-teal.svg)](https://alpinelinux.org/)
 
-**droidR Studio** is a professional-grade, mobile-first R development environment that brings the full power of the R statistical computing language to Android devices. Unlike simple consoles or web-wrappers, droidR Studio runs a native Alpine Linux environment using PRoot, enabling high-performance, offline data science directly on your phone or tablet.
+**droidR-Studio** is a professional-grade, mobile-first R development environment that brings the full power of the R statistical computing language to Android devices. Unlike simple consoles or web-wrappers, droidR Studio runs a native Alpine Linux environment using PRoot, enabling high-performance, offline data science directly on your phone or tablet.
 
 > [!IMPORTANT]
 > All features are not fully tested and may not work as intended. Functionality is highly dependent on the specific packages and configuration within the embedded Alpine filesystem.
